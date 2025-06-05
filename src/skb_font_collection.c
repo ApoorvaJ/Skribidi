@@ -8,7 +8,6 @@
 #include <float.h>
 #include <stdlib.h>
 #include <string.h>
-#include <windows.h>
 
 #include "SBScript.h"
 #include "hb.h"
