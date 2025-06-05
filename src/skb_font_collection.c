@@ -495,9 +495,9 @@ int32_t skb_font_collection_match_fonts(
 
 skb_font_t* skb_font_collection_get_default_font(const skb_font_collection_t* font_collection, uint8_t font_family)
 {
-	skb_font_t* results[64];
+	const skb_font_t* results[64];
 	int32_t results_count = skb_font_collection_match_fonts(font_collection, SBScriptLATN, font_family, SKB_FONT_STYLE_NORMAL, SKB_FONT_STRETCH_NORMAL, 400, results, SKB_COUNTOF(results));
-	return results_count > 0 ? results[0] : NULL;
+	return results_count > 0 ? (skb_font_t*)results[0] : NULL;
 }
 
 skb_font_t* skb_font_collection_get_font(const skb_font_collection_t* font_collection, uint8_t font_idx)
