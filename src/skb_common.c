@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "emoji_data.h"
 
@@ -37,6 +39,46 @@ int64_t skg_perf_timer_elapsed_us(int64_t start, int64_t end)
 	if (g_freq.QuadPart == 0)
 		QueryPerformanceFrequency(&g_freq);
 	return (end - start) * 1000000 / g_freq.QuadPart; // us
+}
+
+#elif defined(__APPLE__)
+#include <mach/mach_time.h>
+#include <stdarg.h>
+
+void skb_debug_log(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vprintf(format, args);
+	va_end(args);
+}
+
+static mach_timebase_info_data_t g_timebase = {0};
+
+int64_t skg_perf_timer_get(void)
+{
+	return mach_absolute_time();
+}
+
+int64_t skg_perf_timer_elapsed_us(int64_t start, int64_t end)
+{
+	if (g_timebase.denom == 0)
+		mach_timebase_info(&g_timebase);
+	return (end - start) * g_timebase.numer / g_timebase.denom / 1000; // convert ns to us
+}
+
+#elif defined(__EMSCRIPTEN__)
+
+void skb_debug_log(const char* format, ...) {}
+
+int64_t skg_perf_timer_get(void)
+{
+	return 0;
+}
+
+int64_t skg_perf_timer_elapsed_us(int64_t start, int64_t end)
+{
+	return 0;
 }
 
 #else

@@ -17,7 +17,6 @@
 #include "budoux.h"
 
 #include <assert.h>
-#include <dinput.h>
 #include <float.h>
 #include <stdlib.h>
 #include <string.h>

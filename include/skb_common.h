@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <math.h>
+#include <stddef.h>
 
 /**
  * @defgroup common Common
