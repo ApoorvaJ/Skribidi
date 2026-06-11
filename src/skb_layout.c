@@ -1744,6 +1744,14 @@ static bool skb__finalize_line(skb_layout_t* layout, skb_layout_line_t* line, bo
 		const skb_font_handle_t default_font_handle = skb_font_collection_get_default_font(layout->params.font_collection, font_family);
 		const skb_font_t* font = skb_font_collection_get_font(layout->params.font_collection, default_font_handle);
 		if (font) {
+			const skb_attribute_font_size_scaling_t font_size_scaling = skb_attributes_get_font_size_scaling(attributes, layout->params.attribute_collection);
+			if (font_size_scaling.type == SKB_FONT_SIZE_SCALING_NORMAL) {
+				font_size *= skb_absf(font_size_scaling.scale);
+			} else if (font_size_scaling.type == SKB_FONT_SIZE_SCALING_SUBSCRIPT) {
+				font_size *= font->metrics.subscript_scale;
+			} else if (font_size_scaling.type == SKB_FONT_SIZE_SCALING_SUPERSCRIPT) {
+				font_size *= font->metrics.superscript_scale;
+			}
 			line_height = skb_maxf(line_height, skb_calculate_line_height(attr_line_height, font, font_size));
 			line->ascender = skb_minf(line->ascender, font->metrics.ascender * font_size);
 			line->descender = skb_maxf(line->descender, font->metrics.descender * font_size);
