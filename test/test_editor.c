@@ -455,6 +455,64 @@ static int test_update_layout_after_font_added(void)
 	return 0;
 }
 
+static int test_composition_at_end_of_text(void)
+{
+	skb_temp_alloc_t* temp_alloc = skb_temp_alloc_create(1024);
+	ENSURE(temp_alloc != NULL);
+
+	skb_font_collection_t* font_collection = skb_font_collection_create();
+	ENSURE(font_collection != NULL);
+	skb_font_handle_t font_handle = skb_font_collection_add_font(font_collection, "data/IBMPlexSans-Regular.ttf", SKB_FONT_FAMILY_DEFAULT, NULL);
+	ENSURE(font_handle);
+
+	skb_attribute_t attributes[] = {
+		skb_attribute_make_font_size(15.f),
+	};
+
+	skb_editor_params_t params = {
+		.font_collection = font_collection,
+		.caret_mode = SKB_CARET_MODE_SKRIBIDI,
+		.paragraph_attributes = SKB_ATTRIBUTE_SET_FROM_STATIC_ARRAY(attributes),
+	};
+
+	skb_editor_t* editor = skb_editor_create(&params);
+	ENSURE(editor != NULL);
+
+	const char* test_text = "Hello\nworld";
+	skb_editor_set_text_utf8(editor, temp_alloc, test_text, (int32_t)strlen(test_text));
+
+	// Place the caret at the very end of the text, like a user about to type there.
+	const skb_text_position_t end_pos = {.offset = (int32_t)strlen(test_text), .affinity = SKB_AFFINITY_TRAILING};
+	skb_editor_select(editor, (skb_text_range_t){.start = end_pos, .end = end_pos});
+
+	// Set a composition (e.g. a dead-key diaeresis). The last paragraph's layout must include it.
+	const uint32_t diaeresis = 0xA8;
+	skb_editor_set_composition_utf32(editor, temp_alloc, &diaeresis, 1, 1);
+
+	const int32_t last_paragraph_idx = skb_editor_get_paragraph_count(editor) - 1;
+	const skb_layout_t* layout = skb_editor_get_paragraph_layout(editor, last_paragraph_idx);
+	ENSURE(skb_layout_get_text_count(layout) == 6); // "world" + composition
+	ENSURE(skb_layout_get_text(layout)[5] == diaeresis);
+
+	// Clearing the composition restores the original layout.
+	skb_editor_clear_composition(editor, temp_alloc);
+	layout = skb_editor_get_paragraph_layout(editor, last_paragraph_idx);
+	ENSURE(skb_layout_get_text_count(layout) == 5);
+
+	// A composition in an empty editor must be laid out too.
+	skb_editor_set_text_utf8(editor, temp_alloc, "", 0);
+	skb_editor_set_composition_utf32(editor, temp_alloc, &diaeresis, 1, 1);
+	layout = skb_editor_get_paragraph_layout(editor, 0);
+	ENSURE(skb_layout_get_text_count(layout) == 1);
+	ENSURE(skb_layout_get_text(layout)[0] == diaeresis);
+
+	skb_editor_destroy(editor);
+	skb_font_collection_destroy(font_collection);
+	skb_temp_alloc_destroy(temp_alloc);
+
+	return 0;
+}
+
 int editor_tests(void)
 {
 	RUN_SUBTEST(test_init);
@@ -463,5 +521,6 @@ int editor_tests(void)
 	RUN_SUBTEST(test_shift_command_text_selection_macos);
 	RUN_SUBTEST(test_option_word_navigation_macos);
 	RUN_SUBTEST(test_update_layout_after_font_added);
+	RUN_SUBTEST(test_composition_at_end_of_text);
 	return 0;
 }

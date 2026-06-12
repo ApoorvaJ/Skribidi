@@ -289,8 +289,15 @@ void skb_rich_layout_set_from_rich_text(
 
 		layout_paragraph->global_text_offset = global_text_offset;
 
+		// Every paragraph but the last ends in a paragraph separator, so a composition at the very
+		// end of the text (offset == count) belongs to the last paragraph; anywhere else an offset
+		// equal to the count is the start of the next paragraph.
+		const bool is_last_paragraph = (i == rich_text_paragraph_count - 1);
+		const bool has_ime_text = local_ime_text_offset >= 0
+			&& (local_ime_text_offset < paragraph_text_count || (is_last_paragraph && local_ime_text_offset == paragraph_text_count));
+
 		if (!is_truncated) {
-			if (local_ime_text_offset >= 0 && local_ime_text_offset < paragraph_text_count) {
+			if (has_ime_text) {
 				skb_temp_alloc_mark_t mark = skb_temp_alloc_save(temp_alloc);
 
 				// Combine IME text with the line.
